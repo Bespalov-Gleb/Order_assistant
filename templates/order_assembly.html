@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}Сборка заказа № {{ order.order_number }} - Order Assistant{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Сборка заказа № {{ order.order_number }}</h1>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Отмена</a>
+</div>
+
+<div class="assembly-container">
+    <div class="progress-info">
+        <h3>Прогресс сборки</h3>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        <p class="progress-text"><span id="currentItem">0</span> из <span id="totalItems">{{ items|length }}</span></p>
+    </div>
+
+    <div class="current-item-card" id="currentItemCard">
+        <div class="item-number" id="itemNumber">-</div>
+        <div class="item-name" id="itemName">Нажмите "Начать" для старта сборки</div>
+        <div class="item-quantity" id="itemQuantity"></div>
+        <div class="item-status" id="itemStatus"></div>
+    </div>
+
+    <div class="voice-controls">
+        <button class="btn btn-large btn-success" id="startBtn" onclick="startAssembly()">
+            Начать сборку
+        </button>
+        
+        <div id="activeControls" style="display: none;">
+            <div class="voice-status" id="voiceStatus">
+                <span class="mic-icon">🎤</span>
+                <span id="statusText">Слушаю команду...</span>
+            </div>
+            
+            <div class="manual-controls">
+                <button class="btn btn-large btn-success" onclick="markCompleted()">
+                    ✓ Есть / Дальше
+                </button>
+                <button class="btn btn-large btn-danger" onclick="markSkipped()">
+                    ✗ Пропустить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="completeSection" style="display: none;">
+        <div class="complete-card">
+            <h2>Сборка завершена!</h2>
+            <p>Выберите статус заказа:</p>
+            <button class="btn btn-large btn-primary" onclick="completeOrder('собран')">
+                Собран
+            </button>
+            <button class="btn btn-large btn-secondary" onclick="completeOrder('в_архив')">
+                В архив
+            </button>
+        </div>
+    </div>
+
+    <div class="items-list">
+        <h3>Список товаров</h3>
+        <div id="itemsList">
+            {% for item in items %}
+            <div class="item-row item-status-{{ item.status }}" id="item-{{ item.id }}" data-item-id="{{ item.id }}">
+                <span class="item-row-number">{{ item.row_number }}</span>
+                <span class="item-row-name">{{ item.name }}</span>
+                <span class="item-row-quantity">{{ item.quantity }} {{ item.unit }}</span>
+                <span class="item-row-badge badge-{{ item.status }}"></span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Данные о товарах
+const items = {{ items | tojson }};
+const orderId = {{ order.id }};
+let currentIndex = 0;
+let recognition = null;
+let isListening = false;
+let audioPlayer = null;
+let isAudioPlaying = false;
+
+// Инициализация Web Speech API
+function initSpeechRecognition() {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'ru-RU';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        
+        recognition.onresult = (event) => {
+            const last = event.results.length - 1;
+            const command = event.results[last][0].transcript.toLowerCase().trim();
+            
+            console.log('Распознана команда:', command);
+            document.getElementById('statusText').textContent = `Команда: "${command}"`;
+            
+            // Проверяем команды
+            if (command.includes('есть') || command.includes('дальше') || command.includes('да')) {
+                markCompleted();
+            } else if (command.includes('пропустить') || command.includes('пропуск') || command.includes('нет')) {
+                markSkipped();
+            }
+            
+            // Возвращаем статус "слушаю"
+            setTimeout(() => {
+                if (isListening) {
+                    document.getElementById('statusText').textContent = 'Слушаю команду...';
+                }
+            }, 1000);
+        };
+        
+        recognition.onerror = (event) => {
+            console.error('Ошибка распознавания:', event.error);
+            if (event.error === 'no-speech') {
+                // Игнорируем эту ошибку, продолжаем слушать
+                return;
+            }
+            document.getElementById('statusText').textContent = 'Ошибка распознавания';
+        };
+        
+        recognition.onend = () => {
+            if (isListening && currentIndex < items.length) {
+                // Автоматически перезапускаем распознавание
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.log('Recognition already started');
+                }
+            }
+        };
+    } else {
+        alert('Ваш браузер не поддерживает распознавание речи. Используйте ручные кнопки.');
+    }
+}
+
+function startAssembly() {
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('activeControls').style.display = 'block';
+    
+    // Инициализируем аудиоплеер
+    if (!audioPlayer) {
+        audioPlayer = new Audio();
+        audioPlayer.addEventListener('ended', () => {
+            isAudioPlaying = false;
+        });
+    }
+
+    // Инициализируем распознавание речи
+    initSpeechRecognition();
+    
+    // Озвучиваем номер заказа через Silero (backend TTS)
+    fetch(`/api/tts/order/${orderId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.audio_url) {
+                playAudio(data.audio_url, () => {
+                    showNextItem();
+                });
+            } else {
+                // Если не удалось получить аудио, просто идем дальше
+                showNextItem();
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка генерации TTS заказа:', error);
+            showNextItem();
+        });
+}
+
+function showNextItem() {
+    if (currentIndex >= items.length) {
+        finishAssembly();
+        return;
+    }
+    
+    // На всякий случай останавливаем прослушивание и аудио
+    stopListening();
+    stopAudio();
+    
+    const item = items[currentIndex];
+    
+    // Обновляем отображение текущего товара
+    document.getElementById('itemNumber').textContent = `№ ${item.row_number}`;
+    document.getElementById('itemName').textContent = item.name;
+    document.getElementById('itemQuantity').textContent = `Количество: ${item.quantity} ${item.unit}`;
+    
+    if (item.should_announce) {
+        document.getElementById('itemStatus').textContent = '';
+        
+        // Получаем и воспроизводим TTS для товара через Silero
+        fetch(`/api/tts/item/${item.id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.audio_url) {
+                    playAudio(data.audio_url, () => {
+                        // После озвучивания начинаем слушать команды
+                        startListening();
+                    });
+                } else {
+                    // Если не удалось получить аудио, сразу слушаем команды
+                    startListening();
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка генерации TTS товара:', error);
+                startListening();
+            });
+    } else {
+        document.getElementById('itemStatus').textContent = `⚠️ ${item.filtered_reason}`;
+        document.getElementById('itemStatus').style.color = '#f39c12';
+        
+        // Автоматически пропускаем
+        setTimeout(() => {
+            markSkipped(true);
+        }, 1500);
+    }
+    
+    // Обновляем прогресс
+    updateProgress();
+    
+    // Подсвечиваем текущий товар в списке
+    highlightCurrentItem();
+}
+
+function startListening() {
+    if (recognition && !isListening) {
+        isListening = true;
+        try {
+            recognition.start();
+            document.getElementById('voiceStatus').style.display = 'block';
+        } catch (e) {
+            console.log('Recognition already started or error:', e);
+        }
+    }
+}
+
+function stopListening() {
+    if (recognition && isListening) {
+        isListening = false;
+        recognition.stop();
+        document.getElementById('voiceStatus').style.display = 'none';
+    }
+}
+
+function markCompleted() {
+    markItem('completed');
+}
+
+function markSkipped(auto = false) {
+    markItem('skipped');
+}
+
+function markItem(status) {
+    if (currentIndex >= items.length) return;
+    
+    const item = items[currentIndex];
+    
+    // Останавливаем прослушивание
+    stopListening();
+    
+    // Обновляем статус на сервере
+    fetch(`/api/order/${orderId}/item/${item.id}/status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: status })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Обновляем визуальный статус
+            const itemRow = document.getElementById(`item-${item.id}`);
+            itemRow.className = `item-row item-status-${status}`;
+            itemRow.querySelector('.item-row-badge').className = `item-row-badge badge-${status}`;
+            
+            // Переходим к следующему товару
+            currentIndex++;
+            setTimeout(() => {
+                showNextItem();
+            }, 500);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Ошибка при обновлении статуса товара');
+    });
+}
+
+function updateProgress() {
+    const progress = (currentIndex / items.length) * 100;
+    document.getElementById('progressFill').style.width = `${progress}%`;
+    document.getElementById('currentItem').textContent = currentIndex;
+    document.getElementById('totalItems').textContent = items.length;
+}
+
+function highlightCurrentItem() {
+    // Убираем подсветку со всех товаров
+    document.querySelectorAll('.item-row').forEach(row => {
+        row.classList.remove('current-item');
+    });
+    
+    // Подсвечиваем текущий
+    if (currentIndex < items.length) {
+        const item = items[currentIndex];
+        const itemRow = document.getElementById(`item-${item.id}`);
+        if (itemRow) {
+            itemRow.classList.add('current-item');
+            itemRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+}
+
+function finishAssembly() {
+    stopListening();
+    stopAudio();
+    document.getElementById('currentItemCard').style.display = 'none';
+    document.getElementById('activeControls').style.display = 'none';
+    document.getElementById('completeSection').style.display = 'block';
+}
+
+function completeOrder(status) {
+    fetch(`/api/order/${orderId}/complete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: status })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '{{ url_for("index") }}';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Ошибка при завершении заказа');
+    });
+}
+
+function playAudio(url, onEnded) {
+    if (!audioPlayer) {
+        audioPlayer = new Audio();
+    }
+    
+    try {
+        isAudioPlaying = true;
+        audioPlayer.src = url;
+        audioPlayer.onended = () => {
+            isAudioPlaying = false;
+            if (typeof onEnded === 'function') {
+                onEnded();
+            }
+        };
+        audioPlayer.onerror = (e) => {
+            console.error('Ошибка воспроизведения аудио:', e);
+            isAudioPlaying = false;
+            if (typeof onEnded === 'function') {
+                onEnded();
+            }
+        };
+        audioPlayer.play().catch(err => {
+            console.error('Ошибка запуска аудио:', err);
+            isAudioPlaying = false;
+            if (typeof onEnded === 'function') {
+                onEnded();
+            }
+        });
+    } catch (e) {
+        console.error('Ошибка в playAudio:', e);
+        isAudioPlaying = false;
+        if (typeof onEnded === 'function') {
+            onEnded();
+        }
+    }
+}
+
+function stopAudio() {
+    if (audioPlayer && isAudioPlaying) {
+        try {
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+        } catch (e) {
+            console.log('Ошибка при остановке аудио:', e);
+        }
+        isAudioPlaying = false;
+    }
+}
+
+// Очистка при выходе со страницы
+window.addEventListener('beforeunload', () => {
+    stopListening();
+    stopAudio();
+});
+</script>
+{% endblock %}
+
+
+

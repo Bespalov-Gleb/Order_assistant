@@ -1,0 +1,746 @@
+/* Общие стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Навигация */
+.navbar {
+    background-color: #fff;
+    border-bottom: 2px solid #e0e0e0;
+    padding: 1rem 0;
+    margin-bottom: 2rem;
+}
+
+.navbar .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+    text-decoration: none;
+}
+
+.nav-links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.nav-links a {
+    color: #555;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.nav-links a:hover {
+    color: #2c3e50;
+}
+
+/* Заголовки страниц */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    color: #2c3e50;
+}
+
+/* Кнопки */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+}
+
+.btn-secondary {
+    background-color: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #7f8c8d;
+}
+
+.btn-success {
+    background-color: #27ae60;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #229954;
+}
+
+.btn-danger {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+
+.btn-large {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    min-width: 200px;
+}
+
+.btn-small {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+}
+
+/* Уведомления */
+.messages {
+    margin-bottom: 1.5rem;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+}
+
+.close-alert {
+    position: absolute;
+    top: 0.5rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: inherit;
+}
+
+/* Модальные окна */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    position: relative;
+}
+
+.modal-content h2 {
+    margin-bottom: 1.5rem;
+    color: #2c3e50;
+}
+
+.close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 2rem;
+    cursor: pointer;
+    color: #999;
+}
+
+.close:hover {
+    color: #333;
+}
+
+/* Формы */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #555;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+/* Карточки заказов */
+.orders-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.order-card {
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.order-header h3 {
+    color: #2c3e50;
+    font-size: 1.3rem;
+}
+
+.order-body p {
+    margin-bottom: 0.5rem;
+    color: #555;
+}
+
+.order-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Бейджи */
+.badge {
+    padding: 0.3rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.badge-новый {
+    background-color: #3498db;
+    color: white;
+}
+
+.badge-собран {
+    background-color: #27ae60;
+    color: white;
+}
+
+.badge-в_архив {
+    background-color: #95a5a6;
+    color: white;
+}
+
+.badge-pending {
+    background-color: #f39c12;
+    color: white;
+}
+
+.badge-completed {
+    background-color: #27ae60;
+    color: white;
+}
+
+.badge-skipped {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.badge-item-pending {
+    background-color: #f39c12;
+    color: white;
+}
+
+.badge-item-completed {
+    background-color: #27ae60;
+    color: white;
+}
+
+.badge-item-skipped {
+    background-color: #e74c3c;
+    color: white;
+}
+
+/* Детали заказа */
+.order-details {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    border: 1px solid #e0e0e0;
+}
+
+.detail-row {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+/* Таблицы */
+.items-table {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead {
+    background-color: #f8f9fa;
+}
+
+th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+td {
+    padding: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+.item-row-pending {
+    background-color: #fff;
+}
+
+.item-row-completed {
+    background-color: #d4edda;
+}
+
+.item-row-skipped {
+    background-color: #f8d7da;
+}
+
+/* Страница сборки */
+.assembly-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.progress-info {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    border: 1px solid #e0e0e0;
+}
+
+.progress-info h3 {
+    margin-bottom: 1rem;
+    color: #2c3e50;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 30px;
+    background-color: #e0e0e0;
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #27ae60;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #555;
+}
+
+.current-item-card {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    border: 2px solid #3498db;
+    min-height: 200px;
+    text-align: center;
+}
+
+.item-number {
+    font-size: 1.2rem;
+    color: #95a5a6;
+    margin-bottom: 1rem;
+}
+
+.item-name {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.item-quantity {
+    font-size: 1.3rem;
+    color: #555;
+    margin-bottom: 1rem;
+}
+
+.item-status {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.voice-controls {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.voice-status {
+    background-color: #d4edda;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    display: none;
+}
+
+.mic-icon {
+    font-size: 1.5rem;
+    margin-right: 0.5rem;
+}
+
+.manual-controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.complete-card {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+    border: 2px solid #27ae60;
+}
+
+.complete-card h2 {
+    color: #27ae60;
+    margin-bottom: 1rem;
+}
+
+.complete-card p {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+
+.complete-card .btn {
+    margin: 0.5rem;
+}
+
+.items-list {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.items-list h3 {
+    margin-bottom: 1rem;
+    color: #2c3e50;
+}
+
+.item-row {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.3s;
+}
+
+.item-row:last-child {
+    border-bottom: none;
+}
+
+.item-row.current-item {
+    background-color: #e3f2fd;
+    border-left: 4px solid #3498db;
+}
+
+.item-row-number {
+    font-weight: 600;
+    color: #95a5a6;
+    min-width: 40px;
+}
+
+.item-row-name {
+    flex: 1;
+    color: #2c3e50;
+}
+
+.item-row-quantity {
+    color: #555;
+    min-width: 80px;
+    text-align: right;
+}
+
+.item-row-badge {
+    min-width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-left: 1rem;
+}
+
+.badge-pending {
+    background-color: #95a5a6;
+}
+
+.badge-completed {
+    background-color: #27ae60;
+}
+
+.badge-skipped {
+    background-color: #e74c3c;
+}
+
+.item-status-completed {
+    background-color: #d4edda;
+}
+
+.item-status-skipped {
+    background-color: #f8d7da;
+}
+
+/* Настройки */
+.settings-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.settings-info {
+    background-color: #e8f4f8;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    border-left: 4px solid #3498db;
+}
+
+.settings-info p {
+    margin-bottom: 0.5rem;
+    color: #555;
+}
+
+.add-filter-form {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    border: 1px solid #e0e0e0;
+}
+
+.add-filter-form h3 {
+    margin-bottom: 1rem;
+    color: #2c3e50;
+}
+
+.filters-list {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.filters-list h3 {
+    margin-bottom: 1rem;
+    color: #2c3e50;
+}
+
+.filters-table {
+    overflow-x: auto;
+}
+
+.filter-word {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+/* Пустое состояние */
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.empty-state p {
+    font-size: 1.2rem;
+    color: #95a5a6;
+    margin-bottom: 1.5rem;
+}
+
+/* Глобальный индикатор загрузки */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.loading-content {
+    text-align: center;
+    background-color: #ffffff;
+    padding: 2rem 3rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    max-width: 420px;
+}
+
+.loading-content p {
+    margin-top: 1rem;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 4px solid rgba(52, 152, 219, 0.2);
+    border-top-color: #3498db;
+    animation: loading-spin 0.9s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes loading-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .orders-list {
+        grid-template-columns: 1fr;
+    }
+
+    .order-actions {
+        flex-direction: column;
+    }
+
+    .order-actions .btn {
+        width: 100%;
+    }
+
+    .manual-controls {
+        flex-direction: column;
+    }
+
+    .manual-controls .btn {
+        width: 100%;
+    }
+
+    table {
+        font-size: 0.9rem;
+    }
+
+    th, td {
+        padding: 0.5rem;
+    }
+}
+
+
+

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки - Order Assistant{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Настройки фильтров</h1>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Назад</a>
+</div>
+
+<div class="settings-container">
+    <div class="settings-info">
+        <p>Добавьте слова или фразы, которые не нужно озвучивать при сборке заказов.</p>
+        <p>Например: "Табак", "Табак для кальяна", "Undercoal"</p>
+    </div>
+
+    <div class="add-filter-form">
+        <h3>Добавить фильтр</h3>
+        <form onsubmit="addFilter(event)">
+            <div class="form-group">
+                <input 
+                    type="text" 
+                    id="filterWord" 
+                    class="form-control" 
+                    placeholder="Введите слово или фразу"
+                    required
+                >
+            </div>
+            <button type="submit" class="btn btn-primary">Добавить</button>
+        </form>
+    </div>
+
+    <div class="filters-list">
+        <h3>Текущие фильтры ({{ filter_words|length }})</h3>
+        
+        {% if filter_words %}
+        <div class="filters-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Слово/фраза</th>
+                        <th>Добавлено</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="filtersTableBody">
+                    {% for filter in filter_words %}
+                    <tr id="filter-{{ filter.id }}">
+                        <td class="filter-word">{{ filter.word }}</td>
+                        <td>{{ filter.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                        <td>
+                            <button class="btn btn-small btn-danger" onclick="deleteFilter({{ filter.id }})">
+                                Удалить
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>Фильтры не добавлены</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function addFilter(event) {
+    event.preventDefault();
+    
+    const wordInput = document.getElementById('filterWord');
+    const word = wordInput.value.trim();
+    
+    if (!word) {
+        alert('Введите слово или фразу');
+        return;
+    }
+    
+    fetch('/api/filter/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ word: word })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Очищаем поле ввода
+            wordInput.value = '';
+            
+            // Перезагружаем страницу для обновления списка
+            location.reload();
+        } else {
+            alert(data.error || 'Ошибка при добавлении фильтра');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Ошибка при добавлении фильтра');
+    });
+}
+
+function deleteFilter(filterId) {
+    if (!confirm('Удалить этот фильтр?')) {
+        return;
+    }
+    
+    fetch(`/api/filter/${filterId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Удаляем строку из таблицы
+            const row = document.getElementById(`filter-${filterId}`);
+            if (row) {
+                row.remove();
+            }
+            
+            // Проверяем, остались ли фильтры
+            const tbody = document.getElementById('filtersTableBody');
+            if (tbody && tbody.children.length === 0) {
+                location.reload();
+            }
+        } else {
+            alert('Ошибка при удалении фильтра');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Ошибка при удалении фильтра');
+    });
+}
+</script>
+{% endblock %}
+
+
+

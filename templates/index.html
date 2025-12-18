@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Заказы - Order Assistant{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Заказы</h1>
+    <button class="btn btn-primary" onclick="document.getElementById('uploadForm').style.display='block'">
+        Загрузить заказ
+    </button>
+</div>
+
+<div id="uploadForm" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="document.getElementById('uploadForm').style.display='none'">&times;</span>
+        <h2>Загрузить Excel файл заказа</h2>
+        <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="file">Выберите файл .xlsx:</label>
+                <input type="file" id="file" name="file" accept=".xlsx" required class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary">Загрузить</button>
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('uploadForm').style.display='none'">Отмена</button>
+        </form>
+    </div>
+</div>
+
+{% if orders %}
+<div class="orders-list">
+    {% for order in orders %}
+    <div class="order-card">
+        <div class="order-header">
+            <h3>Заказ № {{ order.order_number }}</h3>
+            <span class="badge badge-{{ order.status }}">{{ order.status }}</span>
+        </div>
+        <div class="order-body">
+            <p><strong>Дата:</strong> {{ order.order_date.strftime('%d.%m.%Y') }}</p>
+            <p><strong>Товаров:</strong> {{ order.items|length }}</p>
+            <p><strong>Загружен:</strong> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+        </div>
+        <div class="order-actions">
+            <a href="{{ url_for('view_order', order_id=order.id) }}" class="btn btn-secondary">Просмотреть</a>
+            {% if order.status == 'новый' %}
+            <a href="{{ url_for('order_assembly', order_id=order.id) }}" class="btn btn-primary">Начать сборку</a>
+            {% endif %}
+            <button class="btn btn-danger" onclick="deleteOrder({{ order.id }})">Удалить</button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>Нет загруженных заказов</p>
+    <button class="btn btn-primary" onclick="document.getElementById('uploadForm').style.display='block'">
+        Загрузить первый заказ
+    </button>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deleteOrder(orderId) {
+    if (!confirm('Вы уверены, что хотите удалить этот заказ?')) {
+        return;
+    }
+    
+    fetch(`/api/order/${orderId}/delete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка при удалении заказа');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Ошибка при удалении заказа');
+    });
+}
+</script>
+{% endblock %}
+
+
+

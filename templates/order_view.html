@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Заказ № {{ order.order_number }} - Order Assistant{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Заказ № {{ order.order_number }}</h1>
+    <div>
+        <span class="badge badge-{{ order.status }}">{{ order.status }}</span>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Назад</a>
+        {% if order.status == 'новый' %}
+        <a href="{{ url_for('order_assembly', order_id=order.id) }}" class="btn btn-primary">Начать сборку</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="order-details">
+    <div class="detail-row">
+        <strong>Дата заказа:</strong> {{ order.order_date.strftime('%d.%m.%Y') }}
+    </div>
+    <div class="detail-row">
+        <strong>Файл:</strong> {{ order.filename }}
+    </div>
+    <div class="detail-row">
+        <strong>Загружен:</strong> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}
+    </div>
+    <div class="detail-row">
+        <strong>Всего товаров:</strong> {{ order.items|length }}
+    </div>
+</div>
+
+<h2>Товары</h2>
+<div class="items-table">
+    <table>
+        <thead>
+            <tr>
+                <th>№</th>
+                <th>Наименование</th>
+                <th>Количество</th>
+                <th>Код</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items %}
+            <tr class="item-row-{{ item.status }}">
+                <td>{{ item.row_number }}</td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.quantity }} {{ item.unit }}</td>
+                <td>{{ item.code or '-' }}</td>
+                <td>
+                    <span class="badge badge-item-{{ item.status }}">
+                        {% if item.status == 'pending' %}В ожидании
+                        {% elif item.status == 'completed' %}Собран
+                        {% elif item.status == 'skipped' %}Пропущен
+                        {% endif %}
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+
+
