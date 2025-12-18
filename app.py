@@ -1,10 +1,16 @@
 import os
+import logging
+import traceback
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 from config import Config
 from models import db, Order, OrderItem, FilterWord
 from excel_parser import parse_excel_file, validate_excel_file
 from voice_handler import generate_item_speech, generate_order_speech, prepare_items_for_assembly
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -18,6 +24,20 @@ db.init_app(app)
 # Создание директорий
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs('static/audio', exist_ok=True)
+
+# Создание таблиц БД при первом запуске
+def init_database():
+    """Инициализация базы данных"""
+    with app.app_context():
+        try:
+            db.create_all()
+            logger.info("✓ База данных инициализирована")
+        except Exception as e:
+            logger.error(f"✗ Ошибка при инициализации БД: {e}")
+            logger.error(traceback.format_exc())
+
+# Инициализируем БД при импорте модуля
+init_database()
 
 
 def allowed_file(filename):
@@ -36,63 +56,88 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """Загрузка Excel файла заказа"""
-    if 'file' not in request.files:
-        flash('Файл не выбран', 'error')
-        return redirect(url_for('index'))
-    
-    file = request.files['file']
-    
-    if file.filename == '':
-        flash('Файл не выбран', 'error')
-        return redirect(url_for('index'))
-    
-    if file and allowed_file(file.filename):
+    try:
+        logger.info("Начало загрузки файла")
+        
+        if 'file' not in request.files:
+            logger.warning("Файл не найден в запросе")
+            flash('Файл не выбран', 'error')
+            return redirect(url_for('index'))
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            logger.warning("Имя файла пустое")
+            flash('Файл не выбран', 'error')
+            return redirect(url_for('index'))
+        
+        if not file or not allowed_file(file.filename):
+            logger.warning(f"Недопустимый формат файла: {file.filename}")
+            flash('Недопустимый формат файла. Разрешены только .xlsx файлы', 'error')
+            return redirect(url_for('index'))
+        
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        logger.info(f"Сохранение файла: {filepath}")
         file.save(filepath)
         
         # Валидация файла
+        logger.info("Валидация файла")
         is_valid, error_message = validate_excel_file(filepath)
         if not is_valid:
+            logger.error(f"Ошибка валидации: {error_message}")
             try:
                 os.remove(filepath)
-            except PermissionError:
-                pass  # Игнорируем если файл еще занят
+            except Exception as e:
+                logger.warning(f"Не удалось удалить файл: {e}")
             flash(f'Ошибка в файле: {error_message}', 'error')
             return redirect(url_for('index'))
         
-        try:
-            # Парсинг файла
-            order = parse_excel_file(filepath, filename)
-            
-            # Проверка на дублирование заказа
-            existing_order = Order.query.filter_by(order_number=order.order_number).first()
-            if existing_order:
-                flash(f'Заказ № {order.order_number} уже существует', 'warning')
-                try:
-                    os.remove(filepath)
-                except PermissionError:
-                    pass  # Игнорируем если файл еще занят
-                return redirect(url_for('index'))
-            
-            # Сохранение в БД
-            db.session.add(order)
-            db.session.commit()
-            
-            flash(f'Заказ № {order.order_number} успешно загружен ({len(order.items)} товаров)', 'success')
+        # Парсинг файла
+        logger.info("Парсинг файла")
+        order = parse_excel_file(filepath, filename)
+        logger.info(f"Заказ распарсен: {order.order_number}, товаров: {len(order.items)}")
+        
+        # Проверка на дублирование заказа
+        existing_order = Order.query.filter_by(order_number=order.order_number).first()
+        if existing_order:
+            logger.warning(f"Заказ {order.order_number} уже существует")
+            try:
+                os.remove(filepath)
+            except Exception as e:
+                logger.warning(f"Не удалось удалить файл: {e}")
+            flash(f'Заказ № {order.order_number} уже существует', 'warning')
             return redirect(url_for('index'))
         
-        except Exception as e:
-            flash(f'Ошибка при обработке файла: {str(e)}', 'error')
-            if os.path.exists(filepath):
-                try:
-                    os.remove(filepath)
-                except PermissionError:
-                    pass  # Игнорируем если файл еще занят
-            return redirect(url_for('index'))
-    
-    flash('Недопустимый формат файла. Разрешены только .xlsx файлы', 'error')
-    return redirect(url_for('index'))
+        # Сохранение в БД
+        logger.info("Сохранение в БД")
+        db.session.add(order)
+        db.session.commit()
+        logger.info(f"Заказ {order.order_number} успешно сохранен")
+        
+        flash(f'Заказ № {order.order_number} успешно загружен ({len(order.items)} товаров)', 'success')
+        return redirect(url_for('index'))
+        
+    except Exception as e:
+        logger.error(f"КРИТИЧЕСКАЯ ОШИБКА при загрузке файла: {e}")
+        logger.error(traceback.format_exc())
+        
+        # Пытаемся удалить файл если он был создан
+        if 'filepath' in locals() and os.path.exists(filepath):
+            try:
+                os.remove(filepath)
+            except Exception as del_error:
+                logger.warning(f"Не удалось удалить файл: {del_error}")
+        
+        # Откатываем транзакцию БД если она была начата
+        try:
+            db.session.rollback()
+        except Exception as rollback_error:
+            logger.warning(f"Ошибка при откате транзакции: {rollback_error}")
+        
+        flash(f'Ошибка при обработке файла: {str(e)}', 'error')
+        return redirect(url_for('index'))
 
 
 @app.route('/order/<int:order_id>')
